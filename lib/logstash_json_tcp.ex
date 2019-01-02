@@ -110,7 +110,7 @@ defmodule LogstashJson.TCP do
     
     opts= Keyword.put(opts,:worker_pool,worker_pool)
     opts= Keyword.put(opts,:tcp_heart,tcp_heart)
-    Application.get_env(:logger, name, opts)
+    Application.put_env(:logger, name, opts)
 
     %{
       level: level,
