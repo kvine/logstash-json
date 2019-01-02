@@ -12,10 +12,32 @@ defmodule LogstashJson.TCP.Connection do
 
   @connection_opts [active: false, mode: :binary, keepalive: true, packet: 0]
   @backoff_ms 500
-
+  @name "LogstashJson.TCP.Connection"
   def start_link(host, port, queue, id \\ 0, timeout \\ 1_000) do
-    Connection.start_link(__MODULE__, {host, port, queue, id, timeout})
+    Connection.start_link(__MODULE__, {host, port, queue, id, timeout}, name: get_name(id))
   end
+
+  # -> string
+  def get_name(id) do 
+    String.to_atom( @name <>"_#{inspect id}")
+  end
+
+  # -> :ok
+  def send_heart(id,heart_log_test) do 
+      pid= Process.whereis(get_name(id))
+      case pid do 
+        nil -> 
+          :ok
+        _ -> 
+          if heart_log_test do 
+            send(pid,"{\"prefix\": \"test\", \"targets\": [\"heart\"]}\n",1000) 
+          else 
+            send(pid,"\n",1000) 
+          end
+          :ok
+      end 
+  end
+
 
   @doc "Send message to logstash backend"
   def send(conn, data, timeout \\ 5_000) do
@@ -98,6 +120,12 @@ defmodule LogstashJson.TCP.Connection do
     {:disconnect, {:close, from}, %{state | host: host, port: port}}
   end
 
+
+  def handle_info(_msg, state) do
+    {:ok, state}
+  end
+
+
   def terminate(_, %{sock: sock}) do
     if sock != nil do
       :ok = :gen_tcp.close(sock)
@@ -136,7 +164,7 @@ defmodule LogstashJson.TCP.Connection.Worker do
 
   defp consume_messages(conn, queue) do
     msg = BlockingQueue.pop(queue)
-    LogstashJson.TCP.Connection.send(conn, msg, 60_000)
+    LogstashJson.TCP.Connection.send(conn, msg, 2_000)
     consume_messages(conn, queue)
   end
 end

@@ -101,6 +101,11 @@ defmodule LogstashJson.TCP do
     children = 1..workers |> Enum.map(&tcp_worker(&1, host, port, queue))
     {:ok, worker_pool} = Supervisor.start_link(children, strategy: :one_for_one)
 
+    # create heart
+    children= tcp_heart_worker(name)
+    {:ok, tcp_heart} = Supervisor.start_link([children], strategy: :one_for_one)
+    
+
     %{
       level: level,
       host: host,
@@ -110,7 +115,8 @@ defmodule LogstashJson.TCP do
       queue: queue,
       worker_pool: worker_pool,
       formatter: formatter,
-      utc_log: utc_log
+      utc_log: utc_log,
+      tcp_heart: tcp_heart
     }
   end
 
@@ -124,4 +130,10 @@ defmodule LogstashJson.TCP do
   defp tcp_worker(id, host, port, queue) do
     worker(TCP.Connection, [host, port, queue, id], id: id)
   end
+
+  defp tcp_heart_worker(backend_name) do
+      data=%{backend_name: backend_name}
+      worker(LogstashJson.TCP.Heart,[data],restart: :permanent) 
+  end
+
 end
