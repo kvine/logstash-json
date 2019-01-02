@@ -80,7 +80,7 @@ defmodule LogstashJson.TCP do
     worker_pool = Keyword.get(opts, :worker_pool) || nil
     buffer_size = Keyword.get(opts, :buffer_size) || 10_000
     utc_log = Application.get_env(:logger, :utc_log, false)
-
+    tcp_heart = Keyword.get(opts, :tcp_heart) || nil
     formatter =
       case LogstashJson.Event.resolve_formatter_config(Keyword.get(opts, :formatter)) do
         {:ok, fun} ->
@@ -102,9 +102,15 @@ defmodule LogstashJson.TCP do
     {:ok, worker_pool} = Supervisor.start_link(children, strategy: :one_for_one)
 
     # create heart
+    if tcp_heart != nil do
+      :ok = Supervisor.stop(tcp_heart)
+    end
     children= tcp_heart_worker(name)
     {:ok, tcp_heart} = Supervisor.start_link([children], strategy: :one_for_one)
     
+    opts= Keyword.put(opts,:worker_pool,worker_pool)
+    opts= Keyword.put(opts,:tcp_heart,tcp_heart)
+    Application.get_env(:logger, name, opts)
 
     %{
       level: level,
