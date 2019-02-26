@@ -32,7 +32,8 @@ defmodule LogstashJson.TCP.Connection do
           if heart_log_test do 
             send(pid,"{\"prefix\": \"test\", \"targets\": [\"heart\"]}\n",1000) 
           else 
-            send(pid,"\n",1000) 
+            send(pid,"{\"prefix\": \"heart\", \"targets\": [\"heart\"]}\n",1000) 
+            # send(pid,"\n",1000) 
           end
           :ok
       end 
