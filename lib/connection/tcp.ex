@@ -39,6 +39,20 @@ defmodule LogstashJson.TCP.Connection do
       end 
   end
 
+  
+  # pid= Process.whereis(String.to_atom("LogstashJson.TCP.Connection_1"))
+  # LogstashJson.TCP.Connection.close(pid)
+  def force_close(id) do
+    pid= Process.whereis(get_name(id))
+    case pid do 
+      nil -> 
+        :ok
+      _ -> 
+        close(pid)
+        :ok
+    end 
+  end
+
 
   @doc "Send message to logstash backend"
   def send(conn, data, timeout \\ 5_000) do

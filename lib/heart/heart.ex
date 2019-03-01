@@ -7,7 +7,7 @@ defmodule LogstashJson.TCP.Heart do
     end
   
    
-    def init(%{backend_name: backend_name}= data) do
+    def init(%{backend_name: backend_name}= _data) do
         GenServer.cast(__MODULE__,{:init})
         {:ok, %{backend_name: backend_name, 
                 heart_timer: nil
@@ -54,7 +54,7 @@ defmodule LogstashJson.TCP.Heart do
         {:reply, :ok, state}
     end
 
-    def handle_info({:timeout, timer, :heart_timer},state) do
+    def handle_info({:timeout, _timer, :heart_timer},state) do
         # :gen_tcp.send(sock, data)
         cfg= get_cfg(state.backend_name)
         if cfg.heart_log_test do 
@@ -84,5 +84,14 @@ defmodule LogstashJson.TCP.Heart do
         end
     end
 
+    # LogstashJson.TCP.Heart.force_close_workers("logstash_json_tcp_logger")
+    def force_close_workers(backend_name) do 
+        cfg= get_cfg(backend_name)
+        workers= cfg.workers
+        for i <- 1..workers do 
+            LogstashJson.TCP.Connection.force_close(i)
+        end
+    end
+ 
   end
   
